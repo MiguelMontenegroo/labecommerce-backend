@@ -3,8 +3,9 @@ export type TUsers = {
     name: string,
     email: string,
     password: string,
-    createdAt: number
+    createdAt: string
   }
+
   export type TProducts = {
     id: string,
     name: string,
