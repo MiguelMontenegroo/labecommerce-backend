@@ -1,6 +1,45 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.products = exports.users = void 0;
+exports.products = exports.users = exports.searchProductsByName = exports.createProduct = exports.getAllProducts = exports.createUser = exports.getAllUsers = void 0;
+const getAllUsers = () => {
+    return exports.users;
+};
+exports.getAllUsers = getAllUsers;
+const createUser = (id, name, email, password) => {
+    const newUser = {
+        id,
+        name,
+        email,
+        password,
+        createdAt: new Date().toISOString()
+    };
+    exports.users.push(newUser);
+    console.log("Cadastro feito com sucesso");
+};
+exports.createUser = createUser;
+const getAllProducts = () => {
+    return exports.products;
+};
+exports.getAllProducts = getAllProducts;
+const createProduct = (id, name, price, description, imageUrl) => {
+    const newProduct = {
+        id,
+        name,
+        price,
+        description,
+        imageUrl
+    };
+    exports.products.push(newProduct);
+    console.log("Produto criado com sucesso");
+};
+exports.createProduct = createProduct;
+const searchProductsByName = (name) => {
+    const result = exports.products.filter((product) => {
+        return product.name.toLowerCase().includes(name.toLowerCase());
+    });
+    return result;
+};
+exports.searchProductsByName = searchProductsByName;
 exports.users = [{
         id: "u001",
         name: "Fulano",
