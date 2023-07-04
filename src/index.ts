@@ -79,6 +79,51 @@ app.get("/ping", (req: Request, res: Response) => {
         res.status(201).send("Usuario cadastrado com sucesso")
     })
 
+    app.delete("/users/:id", (req: Request, res: Response) => {
+        const idToDelete = req.params.id
+        
+        const usersIndex = users.findIndex((user)=> user.id === idToDelete)
+        
+        if(usersIndex >= 0){
+        users.splice(usersIndex, 1)
+        }
+        res.status(200).send("Usuario deletado com sucesso")
+        })
+
+        app.delete("/products/:id", (req: Request, res: Response) => {
+            const idToDelete2 = req.params.id
+            
+            const productsIndex = products.findIndex((product)=> product.id === idToDelete2)
+            
+            if(productsIndex >= 0){
+           products.splice(productsIndex, 1)
+            }
+            res.status(200).send("Produto deletado com sucesso")
+            })
+
+            app.put("/products/:id", (req: Request, res: Response) => {
+                const idToFind = req.params.id
+                
+                const newId = req.body.id as string | undefined
+                const newName = req.body.name as string | undefined
+                const newDescription = req.body.description as string | undefined
+                const newPrice = req.body.price as number | undefined
+                const newImageUrl = req.body.imageUrl as string| undefined
+                
+                const product = products.find((product) => product.id === idToFind)
+                
+                if(product){
+                product.id = newId || product.id
+                product.name = newName|| product.name
+                product.description = newDescription || product.description
+                product.imageUrl = newImageUrl || product.imageUrl
+                product.price = isNaN(Number(newPrice)) ? product.price : newPrice as number
+                }
+                res.status(200).send("Conta atualizada com sucesso")
+                })
+
+
+
 
 console.log("funcionou")
 console.table(getAllUsers())
