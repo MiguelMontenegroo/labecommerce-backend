@@ -47,3 +47,45 @@ VALUES ("prod007", "Mouse gamer 12000 dpi", 600, "mouse gamer", "https://picsum.
 
 INSERT INTO products (id, name, price, description, image_url)
 VALUES ("prod008", "estabilizador", 800, "estabilizador no break", "https://picsum.photos/seed/Estabilizador/400");
+
+-- get all users
+SELECT * FROM users;
+
+-- get all products
+SELECT * FROM products;
+
+-- get all products funcionalidade 2
+SELECT * FROM products
+WHERE name LIKE "%gamer%";
+
+-- create product
+INSERT INTO products (id, name, price, description, image_url)
+VALUES ("prod008", "estabilizador", 800, "estabilizador no break", "https://picsum.photos/seed/Estabilizador/400");
+
+-- create user
+INSERT INTO users (id, name, email, password, created_at)
+VALUES ("u005", "Miliano", "miliano@gmail.com", "miliano123", datetime('now'));
+
+-- delete user by id
+DELETE FROM users
+WHERE id = "u005";
+
+-- delete product by id
+DELETE FROM products
+WHERE id = "prod008";
+
+-- edit product by id
+UPDATE products
+SET name = "estabilizador gamer",
+price = 1200,
+description = "estabilizador gamer no break",
+image_url = "https://picsum.photos/seed/Estabilizador/400"
+WHERE id = "prod008";
+
+-- edit users by id 
+UPDATE users
+SET name = "miliano cris",
+email = "milianocris@gmail.com",
+password = "milianocris"
+WHERE id = "u005";
+
