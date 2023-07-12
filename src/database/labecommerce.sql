@@ -89,3 +89,31 @@ email = "milianocris@gmail.com",
 password = "milianocris"
 WHERE id = "u005";
 
+CREATE TABLE purchases (
+    id TEXT PRIMARY KEY UNIQUE NOT NULL,
+    buyer TEXT NOT NULL,
+    total_price REAL NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (buyer) REFERENCES users (id)
+);
+
+INSERT INTO purchases (id, buyer, total_price, created_at)
+VALUES ('p001', 'u005', 10000, datetime('now') ),
+('p002', 'u004', 5000, datetime('now'));
+
+-- edite o preço total do pedido
+UPDATE purchases
+SET total_price = 8000
+WHERE id = 'p001';
+
+SELECT 
+purchases.id AS purchaseId,
+users.id AS userId,
+users.name,
+users.email,
+purchases.total_price,
+purchases.created_at
+FROM users
+INNER JOIN purchases
+ON users.id = purchases.buyer;
+
