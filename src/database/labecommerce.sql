@@ -95,11 +95,17 @@ CREATE TABLE purchases (
     total_price REAL NOT NULL,
     created_at TEXT NOT NULL,
     FOREIGN KEY (buyer) REFERENCES users (id)
+     ON UPDATE CASCADE
+    ON DELETE CASCADE
 );
 
 INSERT INTO purchases (id, buyer, total_price, created_at)
 VALUES ('p001', 'u005', 10000, datetime('now') ),
 ('p002', 'u004', 5000, datetime('now'));
+
+
+INSERT INTO purchases (id , buyer, total_price, created_at)
+VALUES('p003', 'u003', 600, datetime('now'));
 
 -- edite o preço total do pedido
 UPDATE purchases
@@ -116,4 +122,30 @@ purchases.created_at
 FROM users
 INNER JOIN purchases
 ON users.id = purchases.buyer;
+
+CREATE TABLE purchases_products (
+    purchase_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (purchase_id) REFERENCES purchases (id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products (id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+);
+
+DROP TABLE purchases_products;
+
+INSERT INTO purchases_products (purchase_id, product_id, quantity)
+VALUES ('p001', 'prod005', 1),
+('p002', 'prod006', 2),
+('p003', 'prod007', 1);
+
+SELECT * FROM purchases_products
+INNER JOIN purchases
+ON purchases_products.purchase_id = purchases.id
+
+INNER JOIN products
+ON products.id = purchases_products.product_id;
 
