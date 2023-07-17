@@ -5,6 +5,7 @@ import { createUser } from "./database";
 import  express, {Request, Response}  from "express";
 import cors from 'cors';
 import { TProducts, TUsers } from "./types";
+import { db } from "./database/knex"
 // console.log(products)
 // console.log(users)
 
@@ -17,13 +18,17 @@ app.listen(3003, () => {
     console.log("servidor rodando na porta 3003")
 })
 
-app.get("/ping", (req: Request, res: Response) => {
+app.get("/ping",(req: Request, res: Response) => {
     res.send("pong")
     })
 
-    app.get("/users", (req: Request, res: Response) => {
+    app.get("/users", async(req: Request, res: Response) => {
         try {
-            res.status(200).send(users)
+           const result = await db.raw(`
+           SELECT * FROM users;
+           `)
+
+            res.status(200).send(result)
         } catch (error:any) {
             console.log(error)
             if(res.statusCode === 200) {
@@ -33,28 +38,44 @@ app.get("/ping", (req: Request, res: Response) => {
         }
     })
 
-    app.get("/products", (req: Request, res: Response) => {
-        res.status(200).send(products)
+    app.get("/products", async(req: Request, res: Response) => {
+       try {
+        const result2 = await db.raw(`
+        SELECT * FROM products;
+        `)
+        res.status(200).send(result2)
+       } catch (error: any) {
+         console.log(error)
+            if(res.statusCode === 200) {
+                res.status(500)
+                }
+            res.send(error.message)
+       }
     })
-    app.get("/products/search", (req: Request, res: Response) => {
+    app.get("/products/search", async(req: Request, res: Response) => {
        try {
         const name = req.query.name as string
     
-        const result = products.filter(
-            (product) => product.name.toLowerCase().includes(name.toLowerCase())
-        )
+        // const result = products.filter(
+        //     (product) => product.name.toLowerCase().includes(name.toLowerCase())
+        // )
+
+        const [byName] = await db.raw(`
+        SELECT * FROM products
+        WHERE name like "%${name}%";
+        `)
 
         if(name.length < 2){
             res.status(400)
             throw new Error("'name' deve ter ao menos 2 caracteres")
         }
 
-        if(!result){
+        if(!byName){
             res.status(404)
             throw new Error("Produto não encontrado")
         }
     
-        res.status(200).send(result)
+        res.status(200).send(byName)
 
        } catch (error: any) {
         console.log(error)
@@ -65,12 +86,13 @@ app.get("/ping", (req: Request, res: Response) => {
        }
     })
     
-    app.post("/users", (req: Request, res: Response) => {
+    app.post("/users", async(req: Request, res: Response) => {
      try {
         const id = req.body.id as string
         const name = req.body.name as string
         const email = req.body.email as string
-        const password = req.body.stack as string
+        const password = req.body.password as string
+
     
         if(typeof id !== "string"){
          res.status(400)
@@ -92,32 +114,35 @@ app.get("/ping", (req: Request, res: Response) => {
             throw new Error("password precisa ser uma string")
         }
           
-          const verifyId = users.find((user) => user.id === id)
+         
           
+         const [verifyId] = await db.raw(`
+         SELECT * FROM users
+         WHERE id = "${id}";
+         `)
 
         if(verifyId){
-            res.status(400)
+             res.status(400)
             throw new Error("o id ja existe")
-        }
+         }
 
-        const verifyEmail = users.find((user) => user.email === email)
-        
-        if(verifyEmail){
-            res.status(400)
-            throw new Error("o email ja existe")
-        }
-
-        const newUser: TUsers = {
-            id,
-            name,
-            email,
-            password,
-            createdAt: new Date().toISOString()
-            
-        }
-
-        users.push(newUser)
     
+        const [verifyEmail] = await db.raw(`
+        SELECT * FROM users 
+        WHERE email = "${email}";
+        `) 
+
+         if(verifyEmail){
+             res.status(400)
+             throw new Error("o email ja existe")
+         }
+
+       
+        await db.raw(`
+        INSERT INTO users (id, name, email, password, created_At)
+        VALUES ("${id}", "${name}", "${email}", "${password}", "${new Date().toISOString}");
+        `)
+
         res.status(201).send("Usuario cadastrado com sucesso")
      } catch (error: any) {
         console.log(error)
@@ -128,13 +153,13 @@ app.get("/ping", (req: Request, res: Response) => {
      }
     })
 
-    app.post("/products", (req: Request, res: Response) => {
+    app.post("/products", async(req: Request, res: Response) => {
      try {
         const id = req.body.id as string
         const name = req.body.name as string
         const price = req.body.price as number
         const description = req.body.description as string
-        const imageUrl = req.body.imageUrl as string
+        const imageUrl = req.body.image_url as string
          
         if(typeof id !== "string"){
             res.status(400)
@@ -161,26 +186,22 @@ app.get("/ping", (req: Request, res: Response) => {
             throw new Error("imageUrl precisa ser uma string")
            }
            
+           const [verifyId] = await db.raw(`
+           SELECT * FROM products
+           WHERE id = "${id}";
+           `)
 
- const verifyId2 = products.find((product) => product.id === id)
-          
-
-        if(verifyId2){
+        if(verifyId){
             res.status(400)
-            throw new Error("o id ja existe")
+            throw new Error("o id é existente")
         }
 
+        await db.raw(`
+        INSERT INTO products (id, name, price, description, image_url)
+        VALUES ("${id}", "${name}", "${price}", "${description}", "${imageUrl}");
+        `)
 
-        const newProduct: TProducts = {
-            id,
-            name,
-            price,
-            description,
-            imageUrl
-            
-        }
-    
-        products.push(newProduct)
+
     
         res.status(201).send("Usuario cadastrado com sucesso")
      } catch (error:any) {
@@ -191,6 +212,34 @@ app.get("/ping", (req: Request, res: Response) => {
         res.send(error.message)
      }
     })
+
+    app.post("/purchases", async(req: Request, res: Response) => {
+        try {
+          const id = req.body.id as string
+        const buyer = req.body.buyer as string
+        const total_price = req.body.total_price as number
+
+        await db.raw(`
+        INSERT INTO purchases (id, buyer, total_price, created_at)
+        VALUES ('${id}', '${buyer}', ${total_price}, '${new Date().toISOString}' );
+        `)
+
+
+        res.status(201).send("Purchase cadastrado com sucesso")
+
+        } catch (error: any) {
+            console.log(error)
+        if(res.statusCode === 200) {
+            res.status(500)
+            }
+        res.send(error.message)
+     }
+        
+    })
+
+
+
+
 
     app.delete("/users/:id", (req: Request, res: Response) => {
        try {
@@ -247,7 +296,7 @@ app.get("/ping", (req: Request, res: Response) => {
        }
             })
 
-            app.put("/products/:id", (req: Request, res: Response) => {
+            app.put("/products/:id", async(req: Request, res: Response) => {
             try {   
                  const idToFind = req.params.id
                 
@@ -257,9 +306,11 @@ app.get("/ping", (req: Request, res: Response) => {
                 const newPrice = req.body.price as number | undefined
                 const newImageUrl = req.body.imageUrl as string| undefined
 
-                const verifyId5 = products.find((product) => product.id === idToFind)
-
-                if(!verifyId5){
+                const [product] = await db.raw(`
+                SELECT * FROM products
+                WHERE id = ${idToFind}
+                `)
+                if(!product){
                     res.status(400)
                     throw new Error("id não existe")
                 }
@@ -300,14 +351,18 @@ app.get("/ping", (req: Request, res: Response) => {
 
                }
 
-                const product = products.find((product) => product.id === idToFind)
+               
                 
                 if(product){
-                product.id = newId || product.id
-                product.name = newName|| product.name
-                product.description = newDescription || product.description
-                product.imageUrl = newImageUrl || product.imageUrl
-                product.price = isNaN(Number(newPrice)) ? product.price : newPrice as number
+                await db.raw(`
+                UPDATE FROM products
+                SET 
+                id = '${newId || product.id}',
+                name = '${newName || product.name}',
+                description = '${newDescription || product.description}',
+                price = '${newPrice || product.price}',
+                image_url = '${newImageUrl || product.image_url}';
+                `)
                 }
                 res.status(200).send("Conta atualizada com sucesso")
                 
@@ -320,9 +375,28 @@ app.get("/ping", (req: Request, res: Response) => {
             }
                 })
 
+                app.delete("/purchases/:id", async(req: Request, res: Response) => {
+                try {
+                    const idToDelete = req.params.id as string
 
+                    await db.raw(`
+                    DELETE FROM purchases
+                   WHERE id = "${idToDelete}";
+                    `)
 
+                    res.status(200).send("Purchase deletada com sucesso")
 
+                } catch (error:any) {
+                    console.log(error)
+                if(res.statusCode === 200) {
+                    res.status(500)
+                    }
+                res.send(error.message)
+                }
+                
+                })
+
+             
 // console.log("funcionou")
 // console.table(getAllUsers())
 // console.table(getAllProducts())
