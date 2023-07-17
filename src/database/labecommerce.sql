@@ -99,6 +99,8 @@ CREATE TABLE purchases (
     ON DELETE CASCADE
 );
 
+DROP TABLE purchases;
+
 INSERT INTO purchases (id, buyer, total_price, created_at)
 VALUES ('p001', 'u005', 10000, datetime('now') ),
 ('p002', 'u004', 5000, datetime('now'));
