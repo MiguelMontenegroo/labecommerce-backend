@@ -24,10 +24,10 @@ app.get("/ping",(req: Request, res: Response) => {
 
     app.get("/users", async(req: Request, res: Response) => {
         try {
-           const result = await db.raw(`
-           SELECT * FROM users;
-           `)
-
+        //    const result = await db.raw(`
+        //    SELECT * FROM users;
+        //    `)
+          const result = await db("users")
             res.status(200).send(result)
         } catch (error:any) {
             console.log(error)
@@ -40,9 +40,11 @@ app.get("/ping",(req: Request, res: Response) => {
 
     app.get("/products", async(req: Request, res: Response) => {
        try {
-        const result2 = await db.raw(`
-        SELECT * FROM products;
-        `)
+        // const result2 = await db.raw(`
+        // SELECT * FROM products;
+        // `)
+
+        const result2 = await db("products")
         res.status(200).send(result2)
        } catch (error: any) {
          console.log(error)
@@ -138,10 +140,20 @@ app.get("/ping",(req: Request, res: Response) => {
          }
 
        
-        await db.raw(`
-        INSERT INTO users (id, name, email, password, created_At)
-        VALUES ("${id}", "${name}", "${email}", "${password}", "${new Date().toISOString}");
-        `)
+         await db.raw(`
+         INSERT INTO users (id, name, email, password, created_At)
+         VALUES ("${id}", "${name}", "${email}", "${password}", "${new Date().toISOString}");
+         `)
+
+
+      await db.insert({
+        id,
+        name,
+        email,
+        password,
+        created_at: new Date().toISOString()
+      }).into("users")
+
 
         res.status(201).send("Usuario cadastrado com sucesso")
      } catch (error: any) {
@@ -394,6 +406,40 @@ app.get("/ping",(req: Request, res: Response) => {
                 res.send(error.message)
                 }
                 
+                })
+
+                app.get("/purchases/:id", async(req: Request, res: Response) => {
+                  try {
+                   const idToFind = req.params.id
+
+                    const result = await db.select(
+                   'purchases.id',
+                   'purchases.buyer AS buyerId',
+                   'users.name AS buyerName',
+                   'users.email AS buyerEmail',
+                   'purchases.total_price',
+                   'purchases.created_at'
+                    ).from('purchases').innerJoin('users', 'purchases.buyer', '=', 'users.id').where('purchases.id', '=', idToFind)
+
+                    const result2 = await db.select(
+                        '*'
+                    ).from('purchases_products').where('purchases_products.purchase_id', '=', idToFind)
+
+                    const products = []
+                    for(let purchase of result2){
+                       const [product] = await db('products').where('products.id', '=', purchase.product_id)
+                       products.push(product)
+                    }
+                    const info = {...result, products}
+                    
+                    res.status(200).send(info)
+                  } catch (error: any) {
+                    console.log(error)
+                    if(res.statusCode === 200) {
+                        res.status(500)
+                        }
+                    res.send(error.message)
+                  }
                 })
 
              
